@@ -37,6 +37,23 @@ app.get('/:id', async (req, res) => {
         .catch(error => res.json({ message: error.message }))
 });
 
+app.get("/role/:role", auth, async (req, res) => {
+    let param = {
+      role: req.params.role
+    }
+    user.findAll({ where: param })
+      .then(result => {
+        res.json({
+          data: result
+        })
+      })
+      .catch(error => {
+        res.json({
+          message: error.message
+        })
+      })
+  })
+
 /**
  * @apiRoutes {post} /hotel/user/
  * @apiName PostUser
@@ -67,54 +84,95 @@ app.post('/', uploadUser.single('foto'), async (req, res) => {
  * @apiGroup User
  * @apiDescription Update user data
  */
-app.put('/', uploadUser.single('foto'), async (req, res) => {
-    if (!req.file) return res.json({ message: "No file uploaded" })
-
-    let params = { id_user: req.body.id_user }
+app.put("/", uploadUser.single("foto"), async (req, res) => {
+    let param = {
+      id_user: req.body.id_user
+    }
     let data = {
-        nama_user: req.body.nama_user,
-        email: req.body.email,
-        password: md5(req.body.password),
-        role: req.body.role
+      nama_user: req.body.nama_user,
+      email: req.body.email,
+      password: md5(req.body.password),
+      role: req.body.role
     }
-
     if (req.file) {
-        let oldImg = await user.findOne({ where: params });
-        let oldImgName = oldImg.foto;
-
-        let loc = path.join(__dirname, '../foto/user/', oldImgName);
-        fs.unlink(loc, (err) => console.log(err));
-
-        let finalImageURL = req.protocol + '://' + req.get('host') + '/user/' + req.file.filename;
-        data.foto = finalImageURL;
+      // get data by id
+      const row = user.findOne({ where: param })
+        .then(result => {
+          let oldFileName = result.foto
+  
+          // delete old file
+          let dir = path.join(__dirname, "../foto/user/", oldFileName)
+          fs.unlink(dir, err => console.log(err))
+        })
+        .catch(error => {
+          console.log(error.message);
+        })
+  
+      // set new filename
+      data.foto = req.file.filename
     }
-
-    await user.update(data, { where: params })
-        .then(result => res.json({ success: 1, message: "Data has been updated" }))
-        .catch(error => res.json({ message: error.message }))
-});
+    user.update(data, { where: param })
+      .then(result => {
+        res.json({
+          message: "Data Berhasil Diperbarui"
+        })
+      })
+      .catch(error => {
+        res.json({
+          message: error.message
+        })
+      })
+  })
 
 /**
  * @apiRoutes {delete} /hotel/user/:id
  * @apiName DeleteUser
  * @apiGroup User
  * @apiDescription Delete user data
- */
+*/
 app.delete('/:id', async (req, res) => {
-  let param = { id_user: req.params.id }
-  try{
-      let delImg = await user.findOne({ where: param });
-      let delImgName = delImg.foto;
+    let params = { id_user: req.params.id }
 
-      let loc = path.join(__dirname, "../foto/user", delImgName);
-      console.log(loc)
-      await fs.unlink(loc, (err) =>{console.log(err)})
-  }catch (err){
-      console.log(err)
-  }
-  await user.destroy({ where: params })
-      .then(result => res.json({ success: 1, message: "Data has been deleted" }))
-      .catch(error => res.json({ message: error.message }))
+    let delImg = await user.findOne({ where: params });
+    if (delImg) {
+        let delImgName = delImg.foto;
+        let loc = path.join(__dirname, '../foto/user/', delImgName);
+        fs.unlink(loc, (err) => console.log(err));
+    }
+
+    await user.destroy({ where: params })
+        .then(result => res.json({ success: 1, message: "Data has been deleted" }))
+        .catch(error => res.json({ message: error.message }))
+    //     try {
+        //       let param = { id_menu: req.params.id }
+    //       let result = await menu.findOne({ where: param })
+    //       let oldFileName = result.gambar
+      
+    //       // delete old file
+    //       let dir = path.join(__dirname, "../img", oldFileName)
+    //       fs.unlink(dir, err => console.log(err))
+    
+    //       // delete data
+    //       menu.destroy({ where: param })
+    //         .then(result => {
+        
+        //           res.json({
+    //             message: "data berhasil di hapus",
+    //           })
+    //         })
+    //         .catch(error => {
+    //           res.json({
+    //             message: error.message
+    //           })
+    //         })
+      
+    //     } catch (error) {
+    //       res.json({
+    //         message: error.message
+    //       })
+    //     }
+      
+    //   })
 });
 
 /**

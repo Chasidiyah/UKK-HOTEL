@@ -12,6 +12,8 @@ const detail_pemesanan = require('./routes/detail_pemesanan');
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 
+app.use(express.static(__dirname))
+
 app.use(cors());
 app.use('/hotel/user', user);
 app.use('/hotel/kamar', kamar);
